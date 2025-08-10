@@ -5,6 +5,7 @@
     --card-bg: rgba(0, 0, 0, 0.3);
     --text-light: #ffffff;
     --text-muted: rgba(255, 255, 255, 0.7);
+    --success: #4CAF50;
 }
 
 body {
@@ -78,7 +79,8 @@ h1 {
     font-size: 0.9rem;
 }
 
-button {
+/* Nút Get Key */
+#getKeyBtn {
     background: var(--primary);
     color: white;
     border: none;
@@ -92,18 +94,51 @@ button {
     gap: 0.5rem;
     font-weight: 600;
     box-shadow: 0 4px 15px rgba(0, 198, 255, 0.3);
+    position: relative;
+    overflow: hidden;
 }
 
-button:hover {
+#getKeyBtn:hover {
     background: var(--secondary);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 114, 255, 0.4);
 }
 
-button:active {
-    transform: translateY(0);
+#getKeyBtn:active {
+    transform: translateY(0) scale(0.98);
 }
 
+/* Hiệu ứng khi nhấn nút */
+#getKeyBtn.click-effect::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+
+#getKeyBtn.click-active::after {
+    animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(20, 20);
+        opacity: 0;
+    }
+}
+
+/* Hiển thị Key */
 .key-display {
     font-size: 1.2rem;
     font-weight: bold;
@@ -114,6 +149,12 @@ button:active {
     word-break: break-all;
     border-left: 4px solid var(--primary);
     animation: fadeIn 0.5s ease;
+    transition: all 0.3s ease;
+}
+
+.key-display:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 198, 255, 0.2);
 }
 
 @keyframes fadeIn {
@@ -121,6 +162,7 @@ button:active {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* Social buttons */
 .social-links {
     display: flex;
     justify-content: center;
@@ -139,10 +181,30 @@ button:active {
     font-size: 1rem;
     transition: all 0.3s ease;
     text-decoration: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.social-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
 }
 
 .social-btn:hover {
     transform: translateY(-3px) scale(1.1);
+}
+
+.social-btn:active::after {
+    animation: ripple 0.6s ease-out;
 }
 
 .discord {
@@ -157,7 +219,7 @@ button:active {
     background: #1877F2;
 }
 
-/* Responsive adjustments */
+/* Responsive */
 @media (max-width: 600px) {
     .container {
         padding: 1.5rem;
@@ -165,5 +227,9 @@ button:active {
     
     h1 {
         font-size: 1.5rem;
+    }
+    
+    #getKeyBtn {
+        padding: 0.8rem 1.5rem;
     }
 }
