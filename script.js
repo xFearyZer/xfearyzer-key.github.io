@@ -1,87 +1,172 @@
 // Configuration
+const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1403667787943120996/PA-03eIqcD8f8zT5YQD8eN0T9afY7wI6S5rT-ra1BU_9SfI4FVgQdnrAQ8z0a52jtYSs";
 const KEY_EXPIRY_DAYS = 7;
+const REPORT_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 // DOM Elements
 const getKeyBtn = document.getElementById('getKeyBtn');
 const keyDisplay = document.getElementById('keyDisplay');
 
-// Generate random key
+// Generate random key (format: KEY_XXXX-XXXX-XXXX)
 function generateKey() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let key = 'KEY_';
-    for (let i = 0; i < 10; i++) {
-        key += chars.charAt(Math.floor(Math.random() * chars.length));
+    
+    // Generate 3 segments of 4 characters
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 4; j++) {
+            key += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        if (i < 2) key += '-';
     }
+    
     return key;
 }
 
 // Save key to localStorage
-function saveKey(key) {
+async function saveKey(key) {
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + KEY_EXPIRY_DAYS);
     
+    const userIP = await getPublicIP();
     const keyData = {
-        key: key,
-        expiry: expiryDate.getTime()
+        key,
+        expiry: expiryDate.getTime(),
+        ip: userIP,
+        created: new Date().toISOString()
     };
     
-    localStorage.setItem('licenseKey', JSON.stringify(keyData));
+    // Get existing keys or initialize empty array
+    const keys = JSON.parse(localStorage.getItem('keys') || '[]');
+    keys.push(keyData);
+    localStorage.setItem('keys', JSON.stringify(keys));
+    
+    // Send creation notice to Discord
+    await sendToDiscord(keyData, "KEY_CREATED");
+    
+    return keyData;
 }
 
-// Load key from storage
-function loadKey() {
-    const keyData = localStorage.getItem('licenseKey');
-    if (!keyData) return null;
-    
-    const parsedData = JSON.parse(keyData);
-    const now = new Date().getTime();
-    
-    if (now < parsedData.expiry) {
-        return parsedData;
+// Get public IP address
+async function getPublicIP() {
+    try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        return data.ip;
+    } catch (error) {
+        console.error("IP fetch error:", error);
+        return "Unknown";
     }
-    localStorage.removeItem('licenseKey');
-    return null;
 }
 
-// Copy to clipboard
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showTooltip('Copied to clipboard!');
-    }).catch(err => {
-        console.error('Copy failed: ', err);
-        showTooltip('Failed to copy');
+// Send data to Discord
+async function sendToDiscord(keyData, action) {
+    const embed = {
+        title: action === "KEY_CREATED" ? "🔑 New Key Generated" : "📊 Daily Key Report",
+        color: action === "KEY_CREATED" ? 0x00FF00 : 0x0099FF,
+        fields: [
+            {
+                name: "Key",
+                value: `\`\`\`${keyData.key}\`\`\``,
+                inline: true
+            },
+            {
+                name: "Expiry Date",
+                value: new Date(keyData.expiry).toLocaleString(),
+                inline: true
+            },
+            {
+                name: "User IP",
+                value: keyData.ip,
+                inline: true
+            }
+        ],
+        timestamp: new Date().toISOString()
+    };
+
+    if (action === "REPORT") {
+        embed.fields.push({
+            name: "Status",
+            value: keyData.expiry > Date.now() ? "🟢 Active" : "🔴 Expired",
+            inline: true
+        });
+    }
+
+    try {
+        await fetch(DISCORD_WEBHOOK, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ embeds: [embed] })
+        });
+    } catch (error) {
+        console.error("Discord webhook error:", error);
+    }
+}
+
+// Get all active keys
+function getActiveKeys() {
+    const keys = JSON.parse(localStorage.getItem('keys') || '[]');
+    return keys.filter(key => key.expiry > Date.now());
+}
+
+// Send daily report to Discord
+async function sendDailyReport() {
+    const activeKeys = getActiveKeys();
+    
+    if (activeKeys.length === 0) {
+        await sendToDiscord({
+            key: "No active keys",
+            expiry: Date.now(),
+            ip: "N/A"
+        }, "REPORT");
+        return;
+    }
+
+    const embed = {
+        title: "📊 Daily Key Report",
+        description: `**Total Active Keys:** ${activeKeys.length}\n` +
+                    `**Expiring Today:** ${activeKeys.filter(k => 
+                        new Date(k.expiry).toDateString() === new Date().toDateString()
+                    ).length}`,
+        color: 0xFFA500,
+        fields: [],
+        timestamp: new Date().toISOString()
+    };
+
+    // Add first 5 keys to the embed (Discord limit)
+    activeKeys.slice(0, 5).forEach(key => {
+        embed.fields.push({
+            name: `Key: ${key.key}`,
+            value: `IP: ${key.ip}\nExpires: ${new Date(key.expiry).toLocaleString()}`,
+            inline: true
+        });
     });
+
+    try {
+        await fetch(DISCORD_WEBHOOK, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ embeds: [embed] })
+        });
+    } catch (error) {
+        console.error("Report send error:", error);
+    }
 }
 
-// Show tooltip notification
-function showTooltip(message) {
-    const tooltip = document.createElement('div');
-    tooltip.className = 'tooltip';
-    tooltip.textContent = message;
-    document.body.appendChild(tooltip);
-    
-    setTimeout(() => {
-        tooltip.classList.add('show');
-    }, 10);
-    
-    setTimeout(() => {
-        tooltip.remove();
-    }, 2000);
-}
-
-// Display key on screen
+// Display key on page
 function displayKey(keyData) {
     const expiryDate = new Date(keyData.expiry);
-    const formattedDate = expiryDate.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    });
-
+    const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+    
     keyDisplay.innerHTML = `
         <div class="key-display">
             <div class="key-value">${keyData.key}</div>
-            <div class="key-expiry">Valid until: ${formattedDate}</div>
+            <div class="key-expiry">
+                <i class="fas fa-clock"></i> Expires: ${expiryDate.toLocaleString('en-US', options)}
+            </div>
+            <div class="key-ip">
+                <i class="fas fa-network-wired"></i> IP: ${keyData.ip}
+            </div>
             <button id="copyKeyBtn" class="copy-btn">
                 <i class="fas fa-copy"></i> Copy Key
             </button>
@@ -90,25 +175,29 @@ function displayKey(keyData) {
 
     // Add copy functionality
     document.getElementById('copyKeyBtn').addEventListener('click', () => {
-        copyToClipboard(keyData.key);
+        navigator.clipboard.writeText(keyData.key);
+        alert('Key copied to clipboard!');
     });
 }
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    // Load existing key
-    const currentKey = loadKey();
-    if (currentKey) {
-        displayKey(currentKey);
+document.addEventListener('DOMContentLoaded', async () => {
+    // Load existing active keys
+    const activeKeys = getActiveKeys();
+    if (activeKeys.length > 0) {
+        displayKey(activeKeys[activeKeys.length - 1]); // Show most recent key
     }
 
-    // Generate new key
-    getKeyBtn.addEventListener('click', () => {
+    // Generate new key button
+    getKeyBtn.addEventListener('click', async () => {
         const newKey = generateKey();
-        saveKey(newKey);
-        displayKey({
-            key: newKey,
-            expiry: new Date().getTime() + (KEY_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
-        });
+        const keyData = await saveKey(newKey);
+        displayKey(keyData);
     });
+
+    // Send initial report
+    await sendDailyReport();
+    
+    // Schedule daily reports
+    setInterval(sendDailyReport, REPORT_INTERVAL);
 });
