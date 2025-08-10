@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Roblox Key</title>
+    <title>Tool Rejoin Roblox</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -12,91 +12,29 @@
         <div class="logo">
             <i class="fas fa-key"></i>
         </div>
-        <h1>Your License Key</h1>
+        <h1>Tool Rejoin Roblox</h1>
+        <p class="subtitle">Get Key Tool</p>
         
-        <div class="key-display">
-            <div id="keyValue">Loading your key...</div>
-            <div id="expiryInfo"></div>
-            <button id="copyKeyBtn">
-                <i class="far fa-copy"></i> Copy Key
+        <div id="key-container">
+            <button id="getKeyBtn">
+                <i class="fas fa-key"></i> Get Key
             </button>
+            <div id="keyDisplay"></div>
         </div>
 
-        <button id="renewKeyBtn">
-            <i class="fas fa-sync-alt"></i> Generate New Key
-        </button>
+        <div class="social-links">
+            <a href="https://discord.gg/9EXTUFYs" target="_blank" class="social-btn discord">
+                <i class="fab fa-discord"></i>
+            </a>
+            <a href="https://youtube.com/@zerxbp?si=D6twLSDqO7GSa8QM" target="_blank" class="social-btn youtube">
+                <i class="fab fa-youtube"></i>
+            </a>
+            <a href="https://www.facebook.com/share/1CHdSqEuzK/?mibextid=wwXIfr" target="_blank" class="social-btn facebook">
+                <i class="fab fa-facebook-f"></i>
+            </a>
+        </div>
     </div>
 
-    <script>
-        // Hàm tạo key
-        function generateKey() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let key = '';
-            for (let i = 0; i < 10; i++) {
-                key += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return `ROBLOX-${key}`;
-        }
-
-        // Hàm lưu key
-        function saveKey(key) {
-            const expiryDate = new Date();
-            expiryDate.setDate(expiryDate.getDate() + 7); // 7 ngày
-            localStorage.setItem('robloxKey', key);
-            localStorage.setItem('keyExpiry', expiryDate.getTime());
-        }
-
-        // Hàm hiển thị key
-        function displayKey(key, expiryDate) {
-            document.getElementById('keyValue').textContent = key;
-            
-            const daysLeft = Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
-            document.getElementById('expiryInfo').innerHTML = `
-                <p>Expires: ${expiryDate.toLocaleDateString()}</p>
-                <p>${daysLeft} days remaining</p>
-            `;
-        }
-
-        // Xử lý khi trang load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Kiểm tra nếu vừa từ YeuMoney về
-            if (localStorage.getItem('awaitingVerification') === 'true') {
-                localStorage.removeItem('awaitingVerification');
-                
-                // Tạo và lưu key mới
-                const newKey = generateKey();
-                saveKey(newKey);
-                const expiryDate = new Date();
-                expiryDate.setDate(expiryDate.getDate() + 7);
-                displayKey(newKey, expiryDate);
-            } else {
-                // Hiển thị key đã có
-                const savedKey = localStorage.getItem('robloxKey');
-                const expiry = localStorage.getItem('keyExpiry');
-                
-                if (savedKey && expiry && new Date().getTime() < expiry) {
-                    displayKey(savedKey, new Date(parseInt(expiry)));
-                } else {
-                    // Nếu không có key hợp lệ, quay về trang chính
-                    window.location.href = "https://xfearyzer.github.io";
-                }
-            }
-
-            // Xử lý nút copy key
-            document.getElementById('copyKeyBtn').addEventListener('click', function() {
-                const key = localStorage.getItem('robloxKey');
-                if (key) {
-                    navigator.clipboard.writeText(key);
-                    alert('Key copied to clipboard!');
-                }
-            });
-
-            // Xử lý nút tạo key mới
-            document.getElementById('renewKeyBtn').addEventListener('click', function() {
-                localStorage.setItem('awaitingVerification', 'true');
-                window.location.href = "https://yeumoney.com/go/SfSm2t3P";
-            });
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
