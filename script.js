@@ -1,7 +1,11 @@
-// Key Generator Configuration
+// Configuration
 const KEY_EXPIRY_DAYS = 7;
 
-// Generate random key with format KEY_XXXXXXXXXX
+// DOM Elements
+const getKeyBtn = document.getElementById('getKeyBtn');
+const keyDisplay = document.getElementById('keyDisplay');
+
+// Generate random key
 function generateKey() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let key = 'KEY_';
@@ -24,17 +28,45 @@ function saveKey(key) {
     localStorage.setItem('licenseKey', JSON.stringify(keyData));
 }
 
-// Load and validate key
+// Load key from storage
 function loadKey() {
     const keyData = localStorage.getItem('licenseKey');
     if (!keyData) return null;
     
     const parsedData = JSON.parse(keyData);
-    if (new Date().getTime() < parsedData.expiry) {
+    const now = new Date().getTime();
+    
+    if (now < parsedData.expiry) {
         return parsedData;
     }
     localStorage.removeItem('licenseKey');
     return null;
+}
+
+// Copy to clipboard
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showTooltip('Copied to clipboard!');
+    }).catch(err => {
+        console.error('Copy failed: ', err);
+        showTooltip('Failed to copy');
+    });
+}
+
+// Show tooltip notification
+function showTooltip(message) {
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tooltip';
+    tooltip.textContent = message;
+    document.body.appendChild(tooltip);
+    
+    setTimeout(() => {
+        tooltip.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        tooltip.remove();
+    }, 2000);
 }
 
 // Display key on screen
@@ -46,36 +78,37 @@ function displayKey(keyData) {
         day: 'numeric' 
     });
 
-    document.getElementById('keyDisplay').innerHTML = `
+    keyDisplay.innerHTML = `
         <div class="key-display">
-            <div>Your License Key:</div>
-            <div style="color: #00c6ff; font-size: 1.4rem; margin-top: 0.5rem;">${keyData.key}</div>
-            <div style="font-size: 0.8rem; margin-top: 0.5rem; color: rgba(255,255,255,0.7);">
-                Expires on ${formattedDate}
-            </div>
+            <div class="key-value">${keyData.key}</div>
+            <div class="key-expiry">Valid until: ${formattedDate}</div>
+            <button id="copyKeyBtn" class="copy-btn">
+                <i class="fas fa-copy"></i> Copy Key
+            </button>
         </div>
     `;
+
+    // Add copy functionality
+    document.getElementById('copyKeyBtn').addEventListener('click', () => {
+        copyToClipboard(keyData.key);
+    });
 }
 
-// Initialize when page loads
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    // Load existing key
     const currentKey = loadKey();
     if (currentKey) {
         displayKey(currentKey);
     }
 
-    // Handle button click
-    document.getElementById('getKeyBtn').addEventListener('click', () => {
+    // Generate new key
+    getKeyBtn.addEventListener('click', () => {
         const newKey = generateKey();
         saveKey(newKey);
         displayKey({
             key: newKey,
             expiry: new Date().getTime() + (KEY_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
         });
-        
-        // Animation feedback
-        const btn = document.getElementById('getKeyBtn');
-        btn.classList.add('clicked');
-        setTimeout(() => btn.classList.remove('clicked'), 300);
     });
 });
