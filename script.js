@@ -1,7 +1,7 @@
-// Cấu hình hệ thống key
-const KEY_EXPIRY_DAYS = 7; // Key hết hạn sau 7 ngày
+// Key Generator Configuration
+const KEY_EXPIRY_DAYS = 7;
 
-// Hàm tạo key ngẫu nhiên (định dạng KEY_XXXXXXX)
+// Generate random key with format KEY_XXXXXXXXXX
 function generateKey() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let key = 'KEY_';
@@ -11,7 +11,7 @@ function generateKey() {
     return key;
 }
 
-// Lưu key vào localStorage
+// Save key to localStorage
 function saveKey(key) {
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + KEY_EXPIRY_DAYS);
@@ -24,55 +24,58 @@ function saveKey(key) {
     localStorage.setItem('licenseKey', JSON.stringify(keyData));
 }
 
-// Kiểm tra key còn hạn hay không
+// Load and validate key
 function loadKey() {
     const keyData = localStorage.getItem('licenseKey');
     if (!keyData) return null;
     
     const parsedData = JSON.parse(keyData);
-    const now = new Date().getTime();
-    
-    if (now < parsedData.expiry) {
-        return {
-            key: parsedData.key,
-            expiry: parsedData.expiry
-        };
+    if (new Date().getTime() < parsedData.expiry) {
+        return parsedData;
     }
-    return null; // Key đã hết hạn
+    localStorage.removeItem('licenseKey');
+    return null;
 }
 
-// Hiển thị key lên giao diện
-function displayKey(key, expiry) {
-    const expiryDate = new Date(expiry);
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    const formattedDate = expiryDate.toLocaleDateString('en-US', options);
-    
+// Display key on screen
+function displayKey(keyData) {
+    const expiryDate = new Date(keyData.expiry);
+    const formattedDate = expiryDate.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+
     document.getElementById('keyDisplay').innerHTML = `
         <div class="key-display">
             <div>Your License Key:</div>
-            <div style="color: #00c6ff; font-size: 1.4rem; margin-top: 0.5rem;">${key}</div>
+            <div style="color: #00c6ff; font-size: 1.4rem; margin-top: 0.5rem;">${keyData.key}</div>
             <div style="font-size: 0.8rem; margin-top: 0.5rem; color: rgba(255,255,255,0.7);">
-                Expires on ${formattedDate} (Valid for ${KEY_EXPIRY_DAYS} days)
+                Expires on ${formattedDate}
             </div>
         </div>
     `;
 }
 
-// Khi trang web tải xong
-document.addEventListener('DOMContentLoaded', function() {
-    const existingKey = loadKey();
-    const getKeyBtn = document.getElementById('getKeyBtn');
-    
-    // Nếu đã có key hợp lệ
-    if (existingKey) {
-        displayKey(existingKey.key, existingKey.expiry);
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    const currentKey = loadKey();
+    if (currentKey) {
+        displayKey(currentKey);
     }
-    
-    // Bấm nút Get Key
-    getKeyBtn.addEventListener('click', function() {
+
+    // Handle button click
+    document.getElementById('getKeyBtn').addEventListener('click', () => {
         const newKey = generateKey();
         saveKey(newKey);
-        displayKey(newKey, new Date().getTime() + (KEY_EXPIRY_DAYS * 24 * 60 * 60 * 1000));
-        alert('Key generated successfully!');
+        displayKey({
+            key: newKey,
+            expiry: new Date().getTime() + (KEY_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
+        });
+        
+        // Animation feedback
+        const btn = document.getElementById('getKeyBtn');
+        btn.classList.add('clicked');
+        setTimeout(() => btn.classList.remove('clicked'), 300);
     });
 });
