@@ -1,3 +1,12 @@
+// ====== Kiểm tra quyền truy cập từ GitHub Page ======
+(function checkAccess() {
+    const grantedUntil = localStorage.getItem('accessGranted');
+    if (!grantedUntil || Date.now() > parseInt(grantedUntil)) {
+        // Không có quyền hoặc đã hết hạn → quay lại GitHub Page
+        window.location.href = "https://xfearyzer.github.io";
+    }
+})();
+
 // Configuration
 const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1403667787943120996/PA-03eIqcD8f8zT5YQD8eN0T9afY7wI6S5rT-ra1BU_9SfI4FVgQdnrAQ8z0a52jtYSs";
 const KEY_EXPIRY_DAYS = 7;
