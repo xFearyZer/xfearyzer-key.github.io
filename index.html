@@ -1,224 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Key Generator - KeySystem</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- Font Awesome -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Key Generator - KeySystem</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <div class="container">
-    <div class="language-selector">
-      <button class="language-btn active" data-lang="en">EN</button>
-      <button class="language-btn" data-lang="vi">VN</button>
-    </div>
-
-    <h1><i class="fas fa-key"></i> <span data-translate="title">Key Generator</span></h1>
-
-    <div id="statusArea" class="key-box">
-      <div id="loadingText" data-translate="checking">Checking access...</div>
-
-      <div id="keySection" style="display:none;">
-        <div class="small" data-translate="your_key">Your key (save carefully, reload will lose this key):</div>
-        <div id="keyDisplay" class="key-value"></div>
-        <div id="expiryDisplay" class="small"></div>
-        <div style="margin-top:12px;">
-          <button id="copyBtn" class="btn" data-translate="copy">Copy Key</button>
-          <button id="backBtn" class="btn btn-ghost" data-translate="back">Back</button>
+    <div class="container">
+        <div class="language-selector">
+            <button class="language-btn active" data-lang="en">EN</button>
+            <button class="language-btn" data-lang="vi">VN</button>
         </div>
-      </div>
+
+        <h1><i class="fas fa-key"></i> <span data-translate="title">Key Generator</span></h1>
+
+        <div id="statusArea" class="key-box">
+            <div id="loadingText" data-translate="checking">Checking access...</div>
+
+            <div id="keySection" style="display:none;">
+                <div class="small" data-translate="your_key">Your key (save carefully, reload will lose this key):</div>
+                <div id="keyDisplay" class="key-value"></div>
+                <div id="expiryDisplay" class="small"></div>
+                <div style="margin-top:12px;">
+                    <button id="copyBtn" class="btn" data-translate="copy">Copy Key</button>
+                    <button id="backBtn" class="btn btn-ghost" data-translate="back">Back</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="social-icons">
+            <a href="YOUR_DISCORD_LINK" class="social-icon" target="_blank"><i class="fab fa-discord"></i></a>
+            <a href="YOUR_YOUTUBE_LINK" class="social-icon" target="_blank"><i class="fab fa-youtube"></i></a>
+            <a href="YOUR_FACEBOOK_LINK" class="social-icon" target="_blank"><i class="fab fa-facebook"></i></a>
+        </div>
     </div>
 
-    <div class="social-icons">
-      <a href="YOUR_DISCORD_LINK" class="social-icon" target="_blank"><i class="fab fa-discord" style="color: var(--discord);"></i></a>
-      <a href="YOUR_YOUTUBE_LINK" class="social-icon" target="_blank"><i class="fab fa-youtube" style="color: var(--youtube);"></i></a>
-      <a href="YOUR_FACEBOOK_LINK" class="social-icon" target="_blank"><i class="fab fa-facebook" style="color: var(--facebook);"></i></a>
-    </div>
-  </div>
-
-  <script>
-// ====== Cấu hình ======
-const GITHUB_URL = "https://xfearyzer.github.io";
-const KEY_SESSION_KEY = "xfearyzer_generated_key";
-const KEY_EXP_SESSION = "xfearyzer_key_expiry";
-const KEY_EXPIRY_DAYS = 7; // Thời hạn key 7 ngày
-
-// Dịch ngôn ngữ
-const translations = {
-  en: {
-    title: "Key Generator",
-    checking: "Checking access...",
-    your_key: "Your key (save carefully, reload will lose this key):",
-    copy: "Copy Key",
-    back: "Back",
-    expires_in: "Expires in:",
-    expired: "Expired",
-    copied: "Key copied to clipboard",
-    copy_failed: "Could not copy automatically. Please copy manually.",
-    reload_warning: "You haven't saved your key! If you reload the page you will lose this key. Do you want to continue?"
-  },
-  vi: {
-    title: "Trình tạo Key",
-    checking: "Đang kiểm tra quyền truy cập...",
-    your_key: "Key của bạn (lưu cẩn thận, reload sẽ mất key này):",
-    copy: "Sao chép Key",
-    back: "Quay lại",
-    expires_in: "Hết hạn sau:",
-    expired: "Đã hết hạn",
-    copied: "Đã copy key vào clipboard",
-    copy_failed: "Không thể copy tự động. Hãy copy thủ công.",
-    reload_warning: "Bạn chưa lưu key! Nếu làm mới trang (reload) bạn sẽ mất key này. Bạn có muốn tiếp tục?"
-  }
-};
-
-let currentLang = 'en';
-
-// ====== Tiện ích ======
-function parseQuery() {
-  const params = new URLSearchParams(window.location.search);
-  return {
-    token: params.get('token'),
-    exp: params.has('exp') ? parseInt(params.get('exp'), 10) : null
-  };
-}
-
-function generateKey() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let key = 'KEY_';
-  for (let i=0;i<3;i++){
-    for (let j=0;j<4;j++){
-      key += chars.charAt(Math.floor(Math.random()*chars.length));
-    }
-    if (i<2) key += '-';
-  }
-  return key;
-}
-
-function redirectToGitHub() {
-  window.location.href = GITHUB_URL;
-}
-
-function translatePage() {
-  document.querySelectorAll('[data-translate]').forEach(el => {
-    const key = el.getAttribute('data-translate');
-    if (translations[currentLang][key]) {
-      el.textContent = translations[currentLang][key];
-    }
-  });
-}
-
-// ====== Chính ======
-(function init() {
-  // Chuyển đổi ngôn ngữ
-  document.querySelectorAll('.language-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      document.querySelector('.language-btn.active').classList.remove('active');
-      this.classList.add('active');
-      currentLang = this.getAttribute('data-lang');
-      translatePage();
-      updateExpiryDisplay(parseInt(sessionStorage.getItem(KEY_EXP_SESSION) || "0", 10));
-    });
-  });
-
-  const q = parseQuery();
-  const now = Date.now();
-
-  // Tính thời hạn 7 ngày kể từ bây giờ
-  const expiryDate = now + (KEY_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
-
-  // Kiểm tra token
-  if (!q.token) {
-    redirectToGitHub();
-    return;
-  }
-
-  // Sử dụng key hiện có hoặc tạo mới
-  const storedKey = sessionStorage.getItem(KEY_SESSION_KEY);
-  const storedExp = sessionStorage.getItem(KEY_EXP_SESSION);
-  if (storedKey && storedExp && parseInt(storedExp,10) > now) {
-    showKey(storedKey, parseInt(storedExp,10));
-  } else {
-    const newKey = generateKey();
-    sessionStorage.setItem(KEY_SESSION_KEY, newKey);
-    sessionStorage.setItem(KEY_EXP_SESSION, expiryDate.toString());
-    showKey(newKey, expiryDate);
-  }
-
-  // Kiểm tra thời hạn mỗi giây
-  setInterval(() => {
-    const kExp = parseInt(sessionStorage.getItem(KEY_EXP_SESSION) || "0", 10);
-    if (!kExp || Date.now() > kExp) {
-      sessionStorage.removeItem(KEY_SESSION_KEY);
-      sessionStorage.removeItem(KEY_EXP_SESSION);
-      redirectToGitHub();
-    } else {
-      updateExpiryDisplay(kExp);
-    }
-  }, 1000);
-
-  // Cảnh báo khi tải lại trang
-  window.addEventListener('beforeunload', function(e) {
-    if (sessionStorage.getItem(KEY_SESSION_KEY)) {
-      const confirmationMessage = translations[currentLang].reload_warning;
-      (e || window.event).returnValue = confirmationMessage;
-      return confirmationMessage;
-    }
-  });
-
-  // Xử lý nút back
-  document.getElementById('backBtn').addEventListener('click', goBack);
-})();
-
-function showKey(key, expiry) {
-  document.getElementById('loadingText').style.display = 'none';
-  const keySection = document.getElementById('keySection');
-  const keyDisplay = document.getElementById('keyDisplay');
-  const expiryDisplay = document.getElementById('expiryDisplay');
-  const copyBtn = document.getElementById('copyBtn');
-
-  keyDisplay.textContent = key;
-  updateExpiryDisplay(expiry);
-  keySection.style.display = 'block';
-
-  copyBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(key).then(() => {
-      alert(translations[currentLang].copied);
-    }).catch(() => {
-      alert(translations[currentLang].copy_failed);
-    });
-  });
-}
-
-function updateExpiryDisplay(expiry) {
-  const expiryDisplay = document.getElementById('expiryDisplay');
-  if (!expiryDisplay) return;
-  
-  const rem = expiry - Date.now();
-  if (rem <= 0) {
-    expiryDisplay.textContent = translations[currentLang].expired;
-    return;
-  }
-  
-  const days = Math.floor(rem / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((rem % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const mins = Math.floor((rem % (1000 * 60 * 60)) / (1000 * 60));
-  
-  if (days > 0) {
-    expiryDisplay.textContent = `${translations[currentLang].expires_in} ${days}d ${hours}h`;
-  } else if (hours > 0) {
-    expiryDisplay.textContent = `${translations[currentLang].expires_in} ${hours}h ${mins}m`;
-  } else {
-    expiryDisplay.textContent = `${translations[currentLang].expires_in} ${mins}m`;
-  }
-}
-
-function goBack() {
-  sessionStorage.removeItem(KEY_SESSION_KEY);
-  sessionStorage.removeItem(KEY_EXP_SESSION);
-  window.location.href = GITHUB_URL;
-}
-  </script>
+    <script src="script.js"></script>
 </body>
 </html>
