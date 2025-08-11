@@ -1,10 +1,11 @@
-// ====== Cấu hình ======
+// ====== Configuration ======
 const GITHUB_URL = "https://xfearyzer.github.io";
 const KEY_SESSION_KEY = "xfearyzer_generated_key";
 const KEY_EXP_SESSION = "xfearyzer_key_expiry";
-const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/your-webhook-url";
+const TOKEN_KEY = "xfearyzer_access_token";
+const TOKEN_EXPIRY_KEY = "xfearyzer_token_expiry";
 
-// Dịch ngôn ngữ
+// Translations
 const translations = {
     en: {
         title: "Key Generator",
@@ -16,7 +17,8 @@ const translations = {
         expired: "Expired",
         copied: "Key copied to clipboard",
         copy_failed: "Could not copy automatically. Please copy manually.",
-        reload_warning: "You haven't saved your key! If you reload the page you will lose this key. Do you want to continue?"
+        reload_warning: "You haven't saved your key! If you reload the page you will lose this key. Do you want to continue?",
+        invalid_token: "Invalid or expired access token. Redirecting..."
     },
     vi: {
         title: "Trình tạo Key",
@@ -28,13 +30,14 @@ const translations = {
         expired: "Đã hết hạn",
         copied: "Đã copy key vào clipboard",
         copy_failed: "Không thể copy tự động. Hãy copy thủ công.",
-        reload_warning: "Bạn chưa lưu key! Nếu làm mới trang (reload) bạn sẽ mất key này. Bạn có muốn tiếp tục?"
+        reload_warning: "Bạn chưa lưu key! Nếu làm mới trang (reload) bạn sẽ mất key này. Bạn có muốn tiếp tục?",
+        invalid_token: "Token không hợp lệ hoặc đã hết hạn. Đang chuyển hướng..."
     }
 };
 
 let currentLang = 'en';
 
-// ====== Tiện ích ======
+// ====== Utilities ======
 function parseQuery() {
     const params = new URLSearchParams(window.location.search);
     return {
@@ -68,108 +71,56 @@ function translatePage() {
     });
 }
 
-async function getPublicIP() {
-    try {
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
-        return data.ip;
-    } catch (error) {
-        console.error("IP fetch error:", error);
-        return "Unknown";
-    }
-}
-
-async function sendToDiscord(keyData, action) {
-    const embed = {
-        title: action === "KEY_CREATED" ? "🔑 New Key Generated" : "📊 Daily Key Report",
-        color: action === "KEY_CREATED" ? 0x00FF00 : 0x0099FF,
-        fields: [
-            {
-                name: "Key",
-                value: `\`\`\`${keyData.key}\`\`\``,
-                inline: true
-            },
-            {
-                name: "Expiry Date",
-                value: new Date(keyData.expiry).toLocaleString(),
-                inline: true
-            },
-            {
-                name: "User IP",
-                value: keyData.ip,
-                inline: true
-            }
-        ],
-        timestamp: new Date().toISOString()
-    };
-
-    try {
-        await fetch(DISCORD_WEBHOOK, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ embeds: [embed] })
-        });
-    } catch (error) {
-        console.error("Discord webhook error:", error);
-    }
-}
-
-// ====== Chính ======
+// ====== Main Logic ======
 document.addEventListener('DOMContentLoaded', async () => {
-    // Kiểm tra token từ URL hoặc localStorage
+    // Check token from URL or localStorage
     const q = parseQuery();
     const now = Date.now();
     
-    // Lấy token từ localStorage
-    const storedToken = localStorage.getItem('xfearyzer_access_token');
-    const storedExp = localStorage.getItem('xfearyzer_token_expiry');
+    // Get from localStorage
+    const storedToken = localStorage.getItem(TOKEN_KEY);
+    const storedExp = localStorage.getItem(TOKEN_EXPIRY_KEY);
     
-    // Kiểm tra token hợp lệ
-    if ((!q.token || !q.exp || parseInt(q.exp, 10) < now) && 
+    // Validate token
+    if ((!q.token || !q.exp || q.exp < now) && 
         (!storedToken || !storedExp || parseInt(storedExp, 10) < now)) {
-        redirectToGitHub();
+        alert(translations[currentLang].invalid_token);
+        setTimeout(redirectToGitHub, 2000);
         return;
     }
     
-    // Nếu token từ URL hợp lệ, lưu vào localStorage
-    if (q.token && q.exp && parseInt(q.exp, 10) > now) {
-        localStorage.setItem('xfearyzer_access_token', q.token);
-        localStorage.setItem('xfearyzer_token_expiry', q.exp);
+    // If URL token is valid, store it
+    if (q.token && q.exp && q.exp > now) {
+        localStorage.setItem(TOKEN_KEY, q.token);
+        localStorage.setItem(TOKEN_EXPIRY_KEY, q.exp.toString());
     }
     
-    // Hiển thị giao diện key
-    const expiryDate = parseInt(localStorage.getItem('xfearyzer_token_expiry'), 10);
+    // Generate and display key
+    const expiryDate = parseInt(localStorage.getItem(TOKEN_EXPIRY_KEY), 10);
     const newKey = generateKey();
     
     sessionStorage.setItem(KEY_SESSION_KEY, newKey);
     sessionStorage.setItem(KEY_EXP_SESSION, expiryDate.toString());
     
-    const userIP = await getPublicIP();
-    const keyData = {
-        key: newKey,
-        expiry: expiryDate,
-        ip: userIP,
-        created: new Date().toISOString()
-    };
-    
-    await sendToDiscord(keyData, "KEY_CREATED");
     showKey(newKey, expiryDate);
     
-    // Kiểm tra thời hạn token mỗi giây
-    setInterval(() => {
-        const tokenExp = parseInt(localStorage.getItem('xfearyzer_token_expiry') || "0", 10);
+    // Check token expiry every second
+    const expiryCheck = setInterval(() => {
+        const tokenExp = parseInt(localStorage.getItem(TOKEN_EXPIRY_KEY) || "0", 10);
         if (!tokenExp || Date.now() > tokenExp) {
-            localStorage.removeItem('xfearyzer_access_token');
-            localStorage.removeItem('xfearyzer_token_expiry');
+            clearInterval(expiryCheck);
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(TOKEN_EXPIRY_KEY);
             sessionStorage.removeItem(KEY_SESSION_KEY);
             sessionStorage.removeItem(KEY_EXP_SESSION);
+            alert(translations[currentLang].expired);
             redirectToGitHub();
         } else {
             updateExpiryDisplay(tokenExp);
         }
     }, 1000);
     
-    // Chuyển đổi ngôn ngữ
+    // Language switching
     document.querySelectorAll('.language-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelector('.language-btn.active').classList.remove('active');
@@ -180,10 +131,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // Xử lý nút back
-    document.getElementById('backBtn').addEventListener('click', goBack);
+    // Back button
+    document.getElementById('backBtn').addEventListener('click', () => {
+        sessionStorage.removeItem(KEY_SESSION_KEY);
+        sessionStorage.removeItem(KEY_EXP_SESSION);
+        redirectToGitHub();
+    });
 
-    // Xử lý nút copy
+    // Copy button
     document.getElementById('copyBtn').addEventListener('click', () => {
         const key = document.getElementById('keyDisplay').textContent;
         navigator.clipboard.writeText(key).then(() => {
@@ -221,13 +176,7 @@ function updateExpiryDisplay(expiry) {
     expiryDisplay.textContent = `${translations[currentLang].expires_in} ${mins}m ${secs}s`;
 }
 
-function goBack() {
-    sessionStorage.removeItem(KEY_SESSION_KEY);
-    sessionStorage.removeItem(KEY_EXP_SESSION);
-    window.location.href = GITHUB_URL;
-}
-
-// Cảnh báo khi tải lại trang
+// Warn before reload
 window.addEventListener('beforeunload', function(e) {
     if (sessionStorage.getItem(KEY_SESSION_KEY)) {
         const confirmationMessage = translations[currentLang].reload_warning;
