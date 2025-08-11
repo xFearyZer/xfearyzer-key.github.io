@@ -4,53 +4,78 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Key Generator - KeySystem</title>
-  <link rel="stylesheet" href="style.css"> <!-- giữ style của bạn -->
-  <style>
-    /* Một số style bổ sung cho hiển thị key */
-    .container { max-width:700px;margin:40px auto;padding:20px;text-align:center;color:#fff; }
-    .key-box { background: rgba(0,0,0,0.45); padding:18px;border-radius:10px;margin-top:18px; }
-    .key-value { font-size:1.6rem;color:#00c6ff;word-break:break-all;margin:10px 0; }
-    .small { color: rgba(255,255,255,0.7); font-size:0.95rem;}
-  </style>
+  <link rel="stylesheet" href="style.css">
+  <!-- Font Awesome -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
   <div class="container">
-    <h1><i class="fas fa-key"></i> Key Generator</h1>
-    <p class="small">Trang này chỉ cho phép truy cập khi có token hợp lệ (được gửi từ trang chính).</p>
+    <div class="language-selector">
+      <button class="language-btn active" data-lang="en">EN</button>
+      <button class="language-btn" data-lang="vi">VN</button>
+    </div>
+
+    <h1><i class="fas fa-key"></i> <span data-translate="title">Key Generator</span></h1>
 
     <div id="statusArea" class="key-box">
-      <div id="loadingText">Đang kiểm tra quyền truy cập...</div>
+      <div id="loadingText" data-translate="checking">Checking access...</div>
 
       <div id="keySection" style="display:none;">
-        <div class="small">Key của bạn (lưu cẩn thận, reload sẽ mất key):</div>
+        <div class="small" data-translate="your_key">Your key (save carefully, reload will lose this key):</div>
         <div id="keyDisplay" class="key-value"></div>
         <div id="expiryDisplay" class="small"></div>
         <div style="margin-top:12px;">
-          <button id="copyBtn" class="btn">Copy Key</button>
-          <button id="backBtn" class="btn btn-ghost" onclick="goBack()">Quay lại</button>
+          <button id="copyBtn" class="btn" data-translate="copy">Copy Key</button>
+          <button id="backBtn" class="btn btn-ghost" data-translate="back">Back</button>
         </div>
       </div>
+    </div>
 
+    <div class="social-icons">
+      <a href="YOUR_DISCORD_LINK" class="social-icon" target="_blank"><i class="fab fa-discord" style="color: var(--discord);"></i></a>
+      <a href="YOUR_YOUTUBE_LINK" class="social-icon" target="_blank"><i class="fab fa-youtube" style="color: var(--youtube);"></i></a>
+      <a href="YOUR_FACEBOOK_LINK" class="social-icon" target="_blank"><i class="fab fa-facebook" style="color: var(--facebook);"></i></a>
     </div>
   </div>
 
   <script>
-/*
-  Netlify page script:
-  - Đọc token + exp từ query string.
-  - Nếu thiếu hoặc exp <= now -> redirect về GitHub.
-  - Nếu hợp lệ -> tạo key 1 lần, lưu vào sessionStorage.
-  - Hiển thị key + expiry.
-  - Nếu user reload trang -> show confirm (cảnh báo mất key).
-  - Nếu token hết hạn trong khi ở trên trang -> redirect về GitHub.
-*/
-
-// ====== Config (có thể chỉnh) ======
+// ====== Cấu hình ======
 const GITHUB_URL = "https://xfearyzer.github.io";
 const KEY_SESSION_KEY = "xfearyzer_generated_key";
 const KEY_EXP_SESSION = "xfearyzer_key_expiry";
+const KEY_EXPIRY_DAYS = 7; // Thời hạn key 7 ngày
 
-// ====== Utils ======
+// Dịch ngôn ngữ
+const translations = {
+  en: {
+    title: "Key Generator",
+    checking: "Checking access...",
+    your_key: "Your key (save carefully, reload will lose this key):",
+    copy: "Copy Key",
+    back: "Back",
+    expires_in: "Expires in:",
+    expired: "Expired",
+    copied: "Key copied to clipboard",
+    copy_failed: "Could not copy automatically. Please copy manually.",
+    reload_warning: "You haven't saved your key! If you reload the page you will lose this key. Do you want to continue?"
+  },
+  vi: {
+    title: "Trình tạo Key",
+    checking: "Đang kiểm tra quyền truy cập...",
+    your_key: "Key của bạn (lưu cẩn thận, reload sẽ mất key này):",
+    copy: "Sao chép Key",
+    back: "Quay lại",
+    expires_in: "Hết hạn sau:",
+    expired: "Đã hết hạn",
+    copied: "Đã copy key vào clipboard",
+    copy_failed: "Không thể copy tự động. Hãy copy thủ công.",
+    reload_warning: "Bạn chưa lưu key! Nếu làm mới trang (reload) bạn sẽ mất key này. Bạn có muốn tiếp tục?"
+  }
+};
+
+let currentLang = 'en';
+
+// ====== Tiện ích ======
 function parseQuery() {
   const params = new URLSearchParams(window.location.search);
   return {
@@ -75,58 +100,75 @@ function redirectToGitHub() {
   window.location.href = GITHUB_URL;
 }
 
-// ====== Main ======
+function translatePage() {
+  document.querySelectorAll('[data-translate]').forEach(el => {
+    const key = el.getAttribute('data-translate');
+    if (translations[currentLang][key]) {
+      el.textContent = translations[currentLang][key];
+    }
+  });
+}
+
+// ====== Chính ======
 (function init() {
+  // Chuyển đổi ngôn ngữ
+  document.querySelectorAll('.language-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelector('.language-btn.active').classList.remove('active');
+      this.classList.add('active');
+      currentLang = this.getAttribute('data-lang');
+      translatePage();
+      updateExpiryDisplay(parseInt(sessionStorage.getItem(KEY_EXP_SESSION) || "0", 10));
+    });
+  });
+
   const q = parseQuery();
   const now = Date.now();
 
-  // token or exp missing -> redirect
-  if (!q.token || !q.exp || isNaN(q.exp) || q.exp <= now) {
-    // không có token hợp lệ -> về trang chính
+  // Tính thời hạn 7 ngày kể từ bây giờ
+  const expiryDate = now + (KEY_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+
+  // Kiểm tra token
+  if (!q.token) {
     redirectToGitHub();
     return;
   }
 
-  // Nếu token hợp lệ, tiến hành hiển thị / tạo key (một lần)
-  // Nếu đã có key trong sessionStorage và expiry vẫn còn -> dùng key đó
+  // Sử dụng key hiện có hoặc tạo mới
   const storedKey = sessionStorage.getItem(KEY_SESSION_KEY);
   const storedExp = sessionStorage.getItem(KEY_EXP_SESSION);
   if (storedKey && storedExp && parseInt(storedExp,10) > now) {
     showKey(storedKey, parseInt(storedExp,10));
   } else {
-    // Tạo key mới, lưu session
     const newKey = generateKey();
-    const keyExpiry = q.exp; // sử dụng cùng expiry token
     sessionStorage.setItem(KEY_SESSION_KEY, newKey);
-    sessionStorage.setItem(KEY_EXP_SESSION, keyExpiry.toString());
-    showKey(newKey, keyExpiry);
+    sessionStorage.setItem(KEY_EXP_SESSION, expiryDate.toString());
+    showKey(newKey, expiryDate);
   }
 
-  // Bắt đầu kiểm tra expiry từng giây để redirect khi hết hạn
+  // Kiểm tra thời hạn mỗi giây
   setInterval(() => {
     const kExp = parseInt(sessionStorage.getItem(KEY_EXP_SESSION) || "0", 10);
     if (!kExp || Date.now() > kExp) {
-      // key hết hạn -> xóa session và redirect về GitHub
       sessionStorage.removeItem(KEY_SESSION_KEY);
       sessionStorage.removeItem(KEY_EXP_SESSION);
       redirectToGitHub();
     } else {
-      // cập nhật hiển thị thời gian còn lại
       updateExpiryDisplay(kExp);
     }
   }, 1000);
 
-  // beforeunload: nếu user reload, cảnh báo mất key
+  // Cảnh báo khi tải lại trang
   window.addEventListener('beforeunload', function(e) {
-    // Nếu có key trong sessionStorage -> cảnh báo
     if (sessionStorage.getItem(KEY_SESSION_KEY)) {
-      const confirmationMessage = "Bạn chưa lưu key! Nếu làm mới trang (reload) bạn sẽ mất key này. Bạn có muốn tiếp tục?";
+      const confirmationMessage = translations[currentLang].reload_warning;
       (e || window.event).returnValue = confirmationMessage;
       return confirmationMessage;
     }
-    // else no warning
   });
 
+  // Xử lý nút back
+  document.getElementById('backBtn').addEventListener('click', goBack);
 })();
 
 function showKey(key, expiry) {
@@ -142,34 +184,41 @@ function showKey(key, expiry) {
 
   copyBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(key).then(() => {
-      alert('Đã copy key vào clipboard');
+      alert(translations[currentLang].copied);
     }).catch(() => {
-      alert('Không thể copy tự động. Hãy copy thủ công.');
+      alert(translations[currentLang].copy_failed);
     });
   });
 }
 
 function updateExpiryDisplay(expiry) {
   const expiryDisplay = document.getElementById('expiryDisplay');
+  if (!expiryDisplay) return;
+  
   const rem = expiry - Date.now();
   if (rem <= 0) {
-    expiryDisplay.textContent = "Đã hết hạn.";
+    expiryDisplay.textContent = translations[currentLang].expired;
     return;
   }
-  const mm = Math.floor(rem/60000);
-  const ss = Math.floor((rem%60000)/1000);
-  expiryDisplay.textContent = `Hết hạn sau: ${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')} (phút:giây)`;
+  
+  const days = Math.floor(rem / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((rem % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const mins = Math.floor((rem % (1000 * 60 * 60)) / (1000 * 60));
+  
+  if (days > 0) {
+    expiryDisplay.textContent = `${translations[currentLang].expires_in} ${days}d ${hours}h`;
+  } else if (hours > 0) {
+    expiryDisplay.textContent = `${translations[currentLang].expires_in} ${hours}h ${mins}m`;
+  } else {
+    expiryDisplay.textContent = `${translations[currentLang].expires_in} ${mins}m`;
+  }
 }
 
 function goBack() {
-  // Xóa key session (nếu muốn) và quay về GitHub
   sessionStorage.removeItem(KEY_SESSION_KEY);
   sessionStorage.removeItem(KEY_EXP_SESSION);
   window.location.href = GITHUB_URL;
 }
   </script>
-
-  <!-- font awesome (nếu cần icon) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous"></script>
 </body>
 </html>
