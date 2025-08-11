@@ -48,7 +48,6 @@ body {
     z-index: -1;
 }
 
-/* Ngôn ngữ */
 .language-selector {
     position: absolute;
     top: 20px;
@@ -72,7 +71,6 @@ body {
     color: white;
 }
 
-/* Mạng xã hội */
 .social-icons {
     display: flex;
     justify-content: center;
@@ -90,23 +88,9 @@ body {
     transform: translateY(-3px);
 }
 
-/* Phần còn lại giữ nguyên */
 @keyframes rotate {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
-}
-
-.logo {
-    font-size: 3rem;
-    color: var(--primary);
-    margin-bottom: 1rem;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
 }
 
 h1 {
@@ -159,6 +143,42 @@ h1 {
     background: transparent;
     border: 1px solid var(--primary);
     color: var(--primary);
+}
+
+.key-display {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    border-left: 4px solid var(--primary);
+    animation: fadeIn 0.5s ease;
+}
+
+.copy-btn {
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.copy-btn:hover {
+    background: rgba(0, 198, 255, 0.1);
+}
+
+.copy-btn:active {
+    transform: scale(0.98);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 600px) {
