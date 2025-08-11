@@ -6,6 +6,9 @@
     --text-light: #ffffff;
     --text-muted: rgba(255, 255, 255, 0.7);
     --success: #4CAF50;
+    --discord: #5865F2;
+    --youtube: #FF0000;
+    --facebook: #1877F2;
 }
 
 body {
@@ -45,6 +48,49 @@ body {
     z-index: -1;
 }
 
+/* Ngôn ngữ */
+.language-selector {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
+}
+
+.language-btn {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: var(--text-light);
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 0 5px;
+    transition: all 0.3s ease;
+}
+
+.language-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Mạng xã hội */
+.social-icons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.social-icon {
+    color: white;
+    font-size: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.social-icon:hover {
+    transform: translateY(-3px);
+}
+
+/* Phần còn lại giữ nguyên */
 @keyframes rotate {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -73,148 +119,48 @@ h1 {
     color: transparent;
 }
 
-.subtitle {
-    color: var(--text-muted);
-    margin-bottom: 2rem;
-    font-size: 0.9rem;
+.key-box { 
+    background: rgba(0,0,0,0.45); 
+    padding:18px;
+    border-radius:10px;
+    margin-top:18px; 
 }
 
-/* Button Styles */
-#getKeyBtn {
+.key-value { 
+    font-size:1.6rem;
+    color:#00c6ff;
+    word-break:break-all;
+    margin:10px 0; 
+}
+
+.small { 
+    color: rgba(255,255,255,0.7); 
+    font-size:0.95rem;
+}
+
+.btn {
     background: var(--primary);
     color: white;
     border: none;
-    padding: 1rem 2rem;
+    padding: 0.8rem 1.5rem;
     font-size: 1rem;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
     font-weight: 600;
-    box-shadow: 0 4px 15px rgba(0, 198, 255, 0.3);
 }
 
-#getKeyBtn:hover {
+.btn:hover {
     background: var(--secondary);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 114, 255, 0.4);
 }
 
-#getKeyBtn:active {
-    transform: translateY(0);
-}
-
-/* Key Display */
-.key-display {
-    margin-top: 1.5rem;
-    padding: 1.5rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    border-left: 4px solid var(--primary);
-    animation: fadeIn 0.5s ease;
-}
-
-.key-value {
-    color: var(--primary);
-    font-size: 1.4rem;
-    margin: 0.5rem 0;
-    word-break: break-all;
-}
-
-.key-expiry {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: 1rem;
-}
-
-.copy-btn {
-    background: rgba(0, 0, 0, 0.2);
-    color: var(--primary);
+.btn-ghost {
+    background: transparent;
     border: 1px solid var(--primary);
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
+    color: var(--primary);
 }
 
-.copy-btn:hover {
-    background: rgba(0, 198, 255, 0.1);
-}
-
-.copy-btn:active {
-    transform: scale(0.98);
-}
-
-/* Tooltip */
-.tooltip {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 0.8rem 1.5rem;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    z-index: 100;
-}
-
-.tooltip.show {
-    opacity: 1;
-}
-
-/* Social Links */
-.social-links {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    margin-top: 2rem;
-}
-
-.social-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-    text-decoration: none;
-}
-
-.social-btn:hover {
-    transform: translateY(-3px);
-}
-
-.discord {
-    background: #5865F2;
-}
-
-.youtube {
-    background: #FF0000;
-}
-
-.facebook {
-    background: #1877F2;
-}
-
-/* Animations */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Responsive */
 @media (max-width: 600px) {
     .container {
         padding: 1.5rem;
@@ -224,7 +170,7 @@ h1 {
         font-size: 1.5rem;
     }
     
-    #getKeyBtn {
-        padding: 0.8rem 1.5rem;
+    .btn {
+        padding: 0.6rem 1.2rem;
     }
 }
